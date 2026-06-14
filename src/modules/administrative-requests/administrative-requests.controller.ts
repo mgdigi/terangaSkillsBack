@@ -13,7 +13,7 @@ import {
 import { AdministrativeRequestsService } from './administrative-requests.service';
 import { CreateAdministrativeRequestDto } from './dto/create-administrative-request.dto';
 import { UpdateAdministrativeRequestDto } from './dto/update-administrative-request.dto';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags, ApiBody } from '@nestjs/swagger';
 import { RequestStatus, Role } from '@prisma/client';
 import { Roles } from '../../core/common/decorators/roles.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -36,7 +36,7 @@ export class AdministrativeRequestsController {
     return this.service.create(createDto, files, req.user.id);
   }
 
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.AGENT)
+  @Roles(Role.ADMIN, Role.AGENT)
   @Get()
   @ApiOperation({ summary: 'Get all requests (Admin/Agent)' })
   findAll() {
@@ -52,7 +52,7 @@ export class AdministrativeRequestsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get details of a request' })
   findOne(@Param('id') id: string, @Req() req: any) {
-    const isAdmin = [Role.SUPER_ADMIN, Role.ADMIN, Role.AGENT].includes(req.user.role);
+    const isAdmin = [Role.ADMIN, Role.AGENT].includes(req.user.role);
     return this.service.findOne(id, req.user.id, isAdmin);
   }
 
@@ -63,13 +63,14 @@ export class AdministrativeRequestsController {
     @Body() updateDto: UpdateAdministrativeRequestDto,
     @Req() req: any,
   ) {
-    const isAdmin = [Role.SUPER_ADMIN, Role.ADMIN].includes(req.user.role);
+    const isAdmin = [Role.ADMIN].includes(req.user.role);
     return this.service.update(id, updateDto, req.user.id, isAdmin);
   }
 
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.AGENT)
+  @Roles(Role.ADMIN, Role.AGENT)
   @Patch(':id/status')
   @ApiOperation({ summary: 'Change request status (Admin/Agent)' })
+  @ApiBody({ schema: { type: 'object', properties: { status: { type: 'string', enum: ['SUBMITTED', 'ASSIGNED', 'IN_PROGRESS', 'PROCESSED', 'VALIDATED', 'AWAITING_PAYMENT', 'COMPLETED', 'REJECTED'] } } } })
   updateStatus(
     @Param('id') id: string,
     @Body('status') status: RequestStatus,
@@ -78,9 +79,10 @@ export class AdministrativeRequestsController {
     return this.service.updateStatus(id, status, req.user.id);
   }
 
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.ADMIN)
   @Patch(':id/assign')
   @ApiOperation({ summary: 'Assign an agent to a request (Admin)' })
+  @ApiBody({ schema: { type: 'object', properties: { agentId: { type: 'string', example: 'uuid-of-agent' } } } })
   assignAgent(
     @Param('id') id: string,
     @Body('agentId') agentId: string,
@@ -89,9 +91,9 @@ export class AdministrativeRequestsController {
     return this.service.assignAgent(id, agentId, req.user.id);
   }
 
-  @Roles(Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN)
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a request (Super Admin only)' })
+  @ApiOperation({ summary: 'Delete a request (Admin only)' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);
   }

@@ -11,6 +11,8 @@ import { ComplaintsModule } from './modules/complaints/complaints.module';
 import { AdministrativeRequestsModule } from './modules/administrative-requests/administrative-requests.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { DepartmentsModule } from './modules/departments/departments.module';
+import { PaymentModule } from './modules/payment/payment.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     AdministrativeRequestsModule,
     DocumentsModule,
     DashboardModule,
+    DepartmentsModule,
+    PaymentModule,
   ],
   controllers: [],
   providers: [

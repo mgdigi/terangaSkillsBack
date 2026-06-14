@@ -7,30 +7,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 enum Role {
-  SUPER_ADMIN
   ADMIN
   AGENT
-  NEIGHBORHOOD_CHIEF
   CITIZEN
 }
 
 enum RequestStatus {
-  PENDING
-  IN_REVIEW
-  APPROVED
-  REJECTED
+  SUBMITTED
+  ASSIGNED
+  IN_PROGRESS
+  PROCESSED
+  VALIDATED
+  AWAITING_PAYMENT
   COMPLETED
-}
-
-enum AdministrativeRequestType {
-  BIRTH_CERTIFICATE
-  DEATH_CERTIFICATE
-  RESIDENCE_CERTIFICATE
-  LITERARY_COPY
-  BIRTH_DECLARATION
-  OTHER
+  REJECTED
 }
 
 enum ComplaintStatus {
@@ -47,115 +38,151 @@ enum MissingDocumentStatus {
   ARCHIVED
 }
 
-model User {
-  id                    String                  @id @default(uuid())
-  email                 String                  @unique
-  password              String
-  firstName             String
-  lastName              String
-  phone                 String?
-  role                  Role                    @default(CITIZEN)
-  isActive              Boolean                 @default(true)
-  refreshToken          String?
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
+model Department {
+  id           String        @id @default(uuid())
+  name         String        @unique // ETAT_CIVIL, URBANISME, AFFAIRES_SOCIALES, VOIRIE
+  description  String?
+  agents       User[]
+  requestTypes RequestType[]
+  complaints   Complaint[]
+}
 
-  administrativeRequests AdministrativeRequest[] @relation("CitizenRequests")
-  assignedRequests       AdministrativeRequest[] @relation("AssignedAgent")
-  complaints            Complaint[]
+model RequestType {
+  id           String                  @id @default(uuid())
+  name         String                  @unique // Acte de naissance, etc.
+  description  String?
+  departmentId String
+  department   Department              @relation(fields: [departmentId], references: [id])
+  requests     AdministrativeRequest[]
+}
+
+model User {
+  id           String  @id @default(uuid())
+  email        String  @unique
+  password     String
+  firstName    String
+  lastName     String
+  phone        String?
+  role         Role    @default(CITIZEN)
+  isActive     Boolean @default(true)
+  refreshToken String?
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  administrativeRequests  AdministrativeRequest[]  @relation("CitizenRequests")
+  assignedRequests        AdministrativeRequest[]  @relation("AssignedAgent")
+  complaints              Complaint[]
   missingDocumentsReports MissingDocument[]
-  actions               ActionLog[]
+  actions                 ActionLog[]
+  documentsReceived       AdministrativeDocument[] @relation("CitizenDocs")
+  documentsIssued         AdministrativeDocument[] @relation("AgentDocs")
 }
 
 model AdministrativeRequest {
-  id              String                    @id @default(uuid())
-  type            AdministrativeRequestType @default(OTHER)
-  title           String
-  description     String
-  data            Json?
-  attachments     String[]
-  status          RequestStatus             @default(PENDING)
-  
-  citizenId       String
-  citizen         User                      @relation("CitizenRequests", fields: [citizenId], references: [id])
-  
+  id          String        @id @default(uuid())
+  title       String
+  description String
+  data        Json?
+  attachments String[]
+  status      RequestStatus @default(SUBMITTED)
+
+  requestTypeId String
+  requestType   RequestType @relation(fields: [requestTypeId], references: [id])
+
+  citizenId String
+  citizen   User   @relation("CitizenRequests", fields: [citizenId], references: [id])
+
   assignedAgentId String?
-  assignedAgent   User?                     @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
+  assignedAgent   User?   @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
 
-  createdAt       DateTime                  @default(now())
-  updatedAt       DateTime                  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  documents       Document[]
-  history         ActionLog[]
+  document AdministrativeDocument?
+  history  ActionLog[]
+}
+
+model AdministrativeDocument {
+  id             String  @id @default(uuid())
+  documentNumber String  @unique
+  fileUrl        String
+  qrCode         String? @unique
+  status         String  @default("VALID")
+
+  citizenId String
+  citizen   User   @relation("CitizenDocs", fields: [citizenId], references: [id])
+
+  agentId String
+  agent   User   @relation("AgentDocs", fields: [agentId], references: [id])
+
+  requestId String                @unique
+  request   AdministrativeRequest @relation(fields: [requestId], references: [id])
+
+  issuedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model Complaint {
-  id              String          @id @default(uuid())
-  title           String
-  description     String
-  photoUrl        String?
-  latitude        Float?
-  longitude       Float?
-  status          ComplaintStatus @default(OPEN)
+  id          String          @id @default(uuid())
+  title       String
+  description String
+  photoUrl    String?
+  latitude    Float?
+  longitude   Float?
+  status      ComplaintStatus @default(OPEN)
 
-  citizenId       String
-  citizen         User            @relation(fields: [citizenId], references: [id])
+  citizenId String
+  citizen   User   @relation(fields: [citizenId], references: [id])
 
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
 
-  history         ActionLog[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  history ActionLog[]
 }
 
 model MissingDocument {
-  id              String              @id @default(uuid())
-  title           String
-  description     String
-  photoUrl        String?
+  id               String                @id @default(uuid())
+  title            String
+  description      String
+  photoUrl         String?
   lastSeenLocation String?
-  latitude        Float?
-  longitude       Float?
-  status          MissingDocumentStatus @default(MISSING)
-  isVerified      Boolean             @default(false)
+  latitude         Float?
+  longitude        Float?
+  status           MissingDocumentStatus @default(MISSING)
+  isVerified       Boolean               @default(false)
 
-  reportedById    String
-  reportedBy      User                @relation(fields: [reportedById], references: [id])
+  reportedById String
+  reportedBy   User   @relation(fields: [reportedById], references: [id])
 
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  history         ActionLog[]
-}
-
-model Document {
-  id                      String                 @id @default(uuid())
-  name                    String
-  fileUrl                 String
-  qrCodeUrl               String?                @unique
-  isVerified              Boolean                @default(false)
-  
-  administrativeRequestId String?
-  administrativeRequest   AdministrativeRequest? @relation(fields: [administrativeRequestId], references: [id])
-
-  createdAt               DateTime               @default(now())
+  history ActionLog[]
 }
 
 model ActionLog {
-  id                      String                 @id @default(uuid())
-  action                  String                 // ex: STATUS_CHANGED, CREATED
-  description             String?
-  
-  actorId                 String
-  actor                   User                   @relation(fields: [actorId], references: [id])
+  id          String  @id @default(uuid())
+  action      String // ex: STATUS_CHANGED, CREATED
+  description String?
+
+  actorId String
+  actor   User   @relation(fields: [actorId], references: [id])
 
   administrativeRequestId String?
   administrativeRequest   AdministrativeRequest? @relation(fields: [administrativeRequestId], references: [id])
-  
-  complaintId             String?
-  complaint               Complaint?             @relation(fields: [complaintId], references: [id])
-  
-  missingDocumentId       String?
-  missingDocument         MissingDocument?       @relation(fields: [missingDocumentId], references: [id])
 
-  createdAt               DateTime               @default(now())
+  complaintId String?
+  complaint   Complaint? @relation(fields: [complaintId], references: [id])
+
+  missingDocumentId String?
+  missingDocument   MissingDocument? @relation(fields: [missingDocumentId], references: [id])
+
+  createdAt DateTime @default(now())
 }

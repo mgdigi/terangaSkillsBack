@@ -1,12 +1,11 @@
-import { IsEnum, IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AdministrativeRequestType } from '@prisma/client';
 
 export class CreateAdministrativeRequestDto {
-  @ApiProperty({ enum: AdministrativeRequestType, example: AdministrativeRequestType.BIRTH_CERTIFICATE })
-  @IsEnum(AdministrativeRequestType)
+  @ApiProperty({ example: 'uuid-request-type' })
+  @IsString()
   @IsNotEmpty()
-  type: AdministrativeRequestType;
+  requestTypeId: string;
 
   @ApiProperty({ example: 'Demande d\'extrait de naissance' })
   @IsString()

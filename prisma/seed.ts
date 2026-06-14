@@ -26,7 +26,7 @@ async function main() {
       firstName: 'Super',
       lastName: 'Admin',
       phone: '+221770000000',
-      role: Role.SUPER_ADMIN,
+      role: Role.ADMIN,
       isActive: true,
     },
   });
