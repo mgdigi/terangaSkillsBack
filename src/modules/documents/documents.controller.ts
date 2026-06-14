@@ -14,6 +14,7 @@ export class DocumentsController {
   @Roles(Role.ADMIN, Role.AGENT)
   @Post('generate/:requestId')
   @ApiOperation({ summary: 'Generate PDF document for a request (Admin/Agent)' })
+  @ApiBody({ schema: { type: 'object', properties: { name: { type: 'string', example: 'DOC-2023-001' }, content: { type: 'string', example: 'Contenu du document...' } } } })
   generateDocument(
     @Param('requestId') requestId: string,
     @Body('name') name: string,

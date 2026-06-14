@@ -70,6 +70,7 @@ export class AdministrativeRequestsController {
   @Roles(Role.ADMIN, Role.AGENT)
   @Patch(':id/status')
   @ApiOperation({ summary: 'Change request status (Admin/Agent)' })
+  @ApiBody({ schema: { type: 'object', properties: { status: { type: 'string', enum: ['SUBMITTED', 'ASSIGNED', 'IN_PROGRESS', 'PROCESSED', 'VALIDATED', 'AWAITING_PAYMENT', 'COMPLETED', 'REJECTED'] } } } })
   updateStatus(
     @Param('id') id: string,
     @Body('status') status: RequestStatus,
@@ -81,6 +82,7 @@ export class AdministrativeRequestsController {
   @Roles(Role.ADMIN)
   @Patch(':id/assign')
   @ApiOperation({ summary: 'Assign an agent to a request (Admin)' })
+  @ApiBody({ schema: { type: 'object', properties: { agentId: { type: 'string', example: 'uuid-of-agent' } } } })
   assignAgent(
     @Param('id') id: string,
     @Body('agentId') agentId: string,
@@ -91,7 +93,7 @@ export class AdministrativeRequestsController {
 
   @Roles(Role.ADMIN)
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a request (Super Admin only)' })
+  @ApiOperation({ summary: 'Delete a request (Admin only)' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);
   }

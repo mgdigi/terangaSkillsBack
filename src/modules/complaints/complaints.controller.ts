@@ -70,6 +70,7 @@ export class ComplaintsController {
   @Roles(Role.ADMIN, Role.AGENT)
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update complaint status (Admin/Agent)' })
+  @ApiBody({ schema: { type: 'object', properties: { status: { type: 'string', enum: ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] } } } })
   updateStatus(
     @Param('id') id: string,
     @Body('status') status: ComplaintStatus,

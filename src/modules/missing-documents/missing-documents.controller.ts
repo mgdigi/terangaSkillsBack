@@ -65,6 +65,7 @@ export class MissingDocumentsController {
   @Roles(Role.ADMIN)
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update the status of a missing document (Admin)' })
+  @ApiBody({ schema: { type: 'object', properties: { status: { type: 'string', enum: ['MISSING', 'FOUND', 'RETURNED', 'ARCHIVED'] } } } })
   updateStatus(
     @Param('id') id: string,
     @Body('status') status: MissingDocumentStatus,
