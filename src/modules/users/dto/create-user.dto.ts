@@ -32,4 +32,9 @@ export class CreateUserDto {
   @IsEnum(Role)
   @IsOptional()
   role?: Role;
+
+  @ApiPropertyOptional({ example: 'uuid-department' })
+  @IsString()
+  @IsOptional()
+  departmentId?: string;
 }

@@ -14,7 +14,7 @@ import { MissingDocumentsService } from './missing-documents.service';
 import { CreateMissingDocumentDto } from './dto/create-missing-document.dto';
 import { UpdateMissingDocumentDto } from './dto/update-missing-document.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { MissingDocumentStatus, Role } from '@prisma/client';
 import { Roles } from '../../core/common/decorators/roles.decorator';
 import { Public } from '../../core/common/decorators/public.decorator';
@@ -58,13 +58,14 @@ export class MissingDocumentsController {
     @Body() updateDto: UpdateMissingDocumentDto,
     @Req() req: any,
   ) {
-    const isAdmin = [Role.SUPER_ADMIN, Role.ADMIN].includes(req.user.role);
+    const isAdmin = [Role.ADMIN].includes(req.user.role);
     return this.missingDocumentsService.update(id, updateDto, req.user.id, isAdmin);
   }
 
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.ADMIN)
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update the status of a missing document (Admin)' })
+  @ApiBody({ schema: { type: 'object', properties: { status: { type: 'string', enum: ['MISSING', 'FOUND', 'RETURNED', 'ARCHIVED'] } } } })
   updateStatus(
     @Param('id') id: string,
     @Body('status') status: MissingDocumentStatus,
@@ -73,7 +74,7 @@ export class MissingDocumentsController {
     return this.missingDocumentsService.updateStatus(id, status, true);
   }
 
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.ADMIN)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a missing document report (Admin only)' })
   remove(@Param('id') id: string) {

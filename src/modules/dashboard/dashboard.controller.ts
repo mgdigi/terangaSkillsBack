@@ -6,7 +6,7 @@ import { Roles } from '../../core/common/decorators/roles.decorator';
 
 @ApiTags('dashboard')
 @ApiBearerAuth()
-@Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.AGENT)
+@Roles(Role.ADMIN, Role.AGENT)
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
