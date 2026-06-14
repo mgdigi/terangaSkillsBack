@@ -12,6 +12,7 @@ import { AdministrativeRequestsModule } from './modules/administrative-requests/
 import { DocumentsModule } from './modules/documents/documents.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
+import { PaymentModule } from './modules/payment/payment.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { DepartmentsModule } from './modules/departments/departments.module';
     DocumentsModule,
     DashboardModule,
     DepartmentsModule,
+    PaymentModule,
   ],
   controllers: [],
   providers: [
