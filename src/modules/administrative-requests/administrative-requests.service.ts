@@ -33,7 +33,7 @@ export class AdministrativeRequestsService {
     return this.prisma.$transaction(async (prisma) => {
       const request = await prisma.administrativeRequest.create({
         data: {
-          type: createDto.type,
+          requestTypeId: createDto.requestTypeId,
           title: createDto.title,
           description: createDto.description,
           data: parsedData,
@@ -81,7 +81,7 @@ export class AdministrativeRequestsService {
       include: {
         citizen: { select: { firstName: true, lastName: true, phone: true } },
         assignedAgent: { select: { firstName: true, lastName: true } },
-        documents: true,
+        document: true,
         history: {
           include: { actor: { select: { firstName: true, lastName: true, role: true } } },
           orderBy: { createdAt: 'desc' },

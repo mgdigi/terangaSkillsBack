@@ -36,7 +36,7 @@ export class AdministrativeRequestsController {
     return this.service.create(createDto, files, req.user.id);
   }
 
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.AGENT)
+  @Roles(Role.ADMIN, Role.AGENT)
   @Get()
   @ApiOperation({ summary: 'Get all requests (Admin/Agent)' })
   findAll() {
@@ -52,7 +52,7 @@ export class AdministrativeRequestsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get details of a request' })
   findOne(@Param('id') id: string, @Req() req: any) {
-    const isAdmin = [Role.SUPER_ADMIN, Role.ADMIN, Role.AGENT].includes(req.user.role);
+    const isAdmin = [Role.ADMIN, Role.AGENT].includes(req.user.role);
     return this.service.findOne(id, req.user.id, isAdmin);
   }
 
@@ -63,11 +63,11 @@ export class AdministrativeRequestsController {
     @Body() updateDto: UpdateAdministrativeRequestDto,
     @Req() req: any,
   ) {
-    const isAdmin = [Role.SUPER_ADMIN, Role.ADMIN].includes(req.user.role);
+    const isAdmin = [Role.ADMIN].includes(req.user.role);
     return this.service.update(id, updateDto, req.user.id, isAdmin);
   }
 
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.AGENT)
+  @Roles(Role.ADMIN, Role.AGENT)
   @Patch(':id/status')
   @ApiOperation({ summary: 'Change request status (Admin/Agent)' })
   updateStatus(
@@ -78,7 +78,7 @@ export class AdministrativeRequestsController {
     return this.service.updateStatus(id, status, req.user.id);
   }
 
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.ADMIN)
   @Patch(':id/assign')
   @ApiOperation({ summary: 'Assign an agent to a request (Admin)' })
   assignAgent(
@@ -89,7 +89,7 @@ export class AdministrativeRequestsController {
     return this.service.assignAgent(id, agentId, req.user.id);
   }
 
-  @Roles(Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a request (Super Admin only)' })
   remove(@Param('id') id: string) {

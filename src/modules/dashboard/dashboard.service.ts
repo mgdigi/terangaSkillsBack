@@ -18,7 +18,7 @@ export class DashboardService {
     ] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.administrativeRequest.count(),
-      this.prisma.administrativeRequest.count({ where: { status: 'PENDING' } }),
+      this.prisma.administrativeRequest.count({ where: { status: 'SUBMITTED' } }),
       this.prisma.administrativeRequest.count({ where: { status: 'COMPLETED' } }),
       this.prisma.complaint.count(),
       this.prisma.complaint.count({ where: { status: 'RESOLVED' } }),

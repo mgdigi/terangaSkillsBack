@@ -14,7 +14,7 @@ export class DocumentsService {
     private readonly config: ConfigService,
   ) {}
 
-  async generateDocument(requestId: string, documentName: string, content: string) {
+  async generateDocument(requestId: string, documentName: string, content: string, agentId?: string) {
     const request = await this.prisma.administrativeRequest.findUnique({
       where: { id: requestId },
       include: { citizen: true },
@@ -41,14 +41,16 @@ export class DocumentsService {
     const uploadResult = await this.uploadPdfToCloudinary(fileForCloudinary);
 
     // Save to DB
-    const document = await this.prisma.document.create({
+    const document = await this.prisma.administrativeDocument.create({
       data: {
         id: documentId,
-        name: documentName,
+        documentNumber: documentName,
         fileUrl: uploadResult.secure_url,
-        qrCodeUrl: verifyUrl,
-        isVerified: true,
-        administrativeRequestId: requestId,
+        qrCode: verifyUrl,
+        status: 'VALID',
+        requestId: requestId,
+        agentId: agentId || 'a38fa1b4-7164-4bf8-bde8-d1d6a6f1d24c',
+        citizenId: request.citizenId,
       },
     });
 
@@ -97,10 +99,10 @@ export class DocumentsService {
   }
 
   async verify(id: string) {
-    const document = await this.prisma.document.findUnique({
+    const document = await this.prisma.administrativeDocument.findUnique({
       where: { id },
       include: {
-        administrativeRequest: {
+        request: {
           select: { title: true, status: true, citizen: { select: { firstName: true, lastName: true } } },
         },
       },
@@ -111,7 +113,7 @@ export class DocumentsService {
     }
 
     return {
-      isValid: document.isVerified,
+      isValid: document.status === 'VALID',
       document,
     };
   }

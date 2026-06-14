@@ -36,7 +36,7 @@ export class ComplaintsController {
     return this.complaintsService.create(createDto, file, req.user.id);
   }
 
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.AGENT, Role.NEIGHBORHOOD_CHIEF)
+  @Roles(Role.ADMIN, Role.AGENT)
   @Get()
   @ApiOperation({ summary: 'Get all complaints (Admin/Agent/Chief)' })
   findAll() {
@@ -52,7 +52,7 @@ export class ComplaintsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get complaint details' })
   findOne(@Param('id') id: string, @Req() req: any) {
-    const isAdmin = [Role.SUPER_ADMIN, Role.ADMIN, Role.AGENT, Role.NEIGHBORHOOD_CHIEF].includes(req.user.role);
+    const isAdmin = [Role.ADMIN, Role.AGENT].includes(req.user.role);
     return this.complaintsService.findOne(id, req.user.id, isAdmin);
   }
 
@@ -63,11 +63,11 @@ export class ComplaintsController {
     @Body() updateDto: UpdateComplaintDto,
     @Req() req: any,
   ) {
-    const isAdmin = [Role.SUPER_ADMIN, Role.ADMIN].includes(req.user.role);
+    const isAdmin = [Role.ADMIN].includes(req.user.role);
     return this.complaintsService.update(id, updateDto, req.user.id, isAdmin);
   }
 
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.AGENT)
+  @Roles(Role.ADMIN, Role.AGENT)
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update complaint status (Admin/Agent)' })
   updateStatus(
@@ -78,7 +78,7 @@ export class ComplaintsController {
     return this.complaintsService.updateStatus(id, status, req.user.id);
   }
 
-  @Roles(Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a complaint (Super Admin only)' })
   remove(@Param('id') id: string) {

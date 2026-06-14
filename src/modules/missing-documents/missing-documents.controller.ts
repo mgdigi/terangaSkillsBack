@@ -58,11 +58,11 @@ export class MissingDocumentsController {
     @Body() updateDto: UpdateMissingDocumentDto,
     @Req() req: any,
   ) {
-    const isAdmin = [Role.SUPER_ADMIN, Role.ADMIN].includes(req.user.role);
+    const isAdmin = [Role.ADMIN].includes(req.user.role);
     return this.missingDocumentsService.update(id, updateDto, req.user.id, isAdmin);
   }
 
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.ADMIN)
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update the status of a missing document (Admin)' })
   updateStatus(
@@ -73,7 +73,7 @@ export class MissingDocumentsController {
     return this.missingDocumentsService.updateStatus(id, status, true);
   }
 
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.ADMIN)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a missing document report (Admin only)' })
   remove(@Param('id') id: string) {

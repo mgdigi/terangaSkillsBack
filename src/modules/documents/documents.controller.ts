@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { DocumentsService } from './documents.service';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
@@ -11,15 +11,16 @@ export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 
   @ApiBearerAuth()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.AGENT)
+  @Roles(Role.ADMIN, Role.AGENT)
   @Post('generate/:requestId')
   @ApiOperation({ summary: 'Generate PDF document for a request (Admin/Agent)' })
   generateDocument(
     @Param('requestId') requestId: string,
     @Body('name') name: string,
     @Body('content') content: string,
+    @Req() req: any,
   ) {
-    return this.documentsService.generateDocument(requestId, name, content);
+    return this.documentsService.generateDocument(requestId, name, content, req.user.id);
   }
 
   @Public()
