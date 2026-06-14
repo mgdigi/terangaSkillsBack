@@ -13,7 +13,7 @@ import {
 import { AdministrativeRequestsService } from './administrative-requests.service';
 import { CreateAdministrativeRequestDto } from './dto/create-administrative-request.dto';
 import { UpdateAdministrativeRequestDto } from './dto/update-administrative-request.dto';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags, ApiBody } from '@nestjs/swagger';
 import { RequestStatus, Role } from '@prisma/client';
 import { Roles } from '../../core/common/decorators/roles.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';

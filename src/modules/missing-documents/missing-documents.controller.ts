@@ -14,7 +14,7 @@ import { MissingDocumentsService } from './missing-documents.service';
 import { CreateMissingDocumentDto } from './dto/create-missing-document.dto';
 import { UpdateMissingDocumentDto } from './dto/update-missing-document.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { MissingDocumentStatus, Role } from '@prisma/client';
 import { Roles } from '../../core/common/decorators/roles.decorator';
 import { Public } from '../../core/common/decorators/public.decorator';
