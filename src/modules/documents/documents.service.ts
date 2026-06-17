@@ -23,7 +23,11 @@ export class DocumentsService {
     if (!request) throw new NotFoundException('Request not found');
 
     const documentId = uuidv4();
-    const verifyUrl = `${this.config.get('FRONTEND_URL') || 'http://localhost:3000'}/api/v1/documents/verify/${documentId}`;
+    const frontendUrl =
+      this.config.get<string>('FRONTEND_URL') ||
+      this.config.get<string>('FRONT_PUBLIC_API_URL') ||
+      'http://localhost:3000';
+    const verifyUrl = `${frontendUrl}/api/v1/documents/verify/${documentId}`;
     
     // Generate QR Code as base64 string
     const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl);
@@ -49,7 +53,7 @@ export class DocumentsService {
         qrCode: verifyUrl,
         status: 'VALID',
         requestId: requestId,
-        agentId: agentId || 'a38fa1b4-7164-4bf8-bde8-d1d6a6f1d24c',
+        agentId: agentId!,
         citizenId: request.citizenId,
       },
     });

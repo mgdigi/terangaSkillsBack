@@ -5,6 +5,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './core/common/guards/jwt-auth.guard';
+import { RolesGuard } from './core/common/guards/roles.guard';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { MissingDocumentsModule } from './modules/missing-documents/missing-documents.module';
 import { ComplaintsModule } from './modules/complaints/complaints.module';
@@ -13,6 +14,7 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
 import { PaymentModule } from './modules/payment/payment.module';
+import { InvestmentProjectsModule } from './modules/investment-projects/investment-projects.module';
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { PaymentModule } from './modules/payment/payment.module';
     DashboardModule,
     DepartmentsModule,
     PaymentModule,
+    InvestmentProjectsModule,
   ],
   controllers: [],
   providers: [
@@ -35,7 +38,10 @@ import { PaymentModule } from './modules/payment/payment.module';
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
   ],
 })
 export class AppModule {}
-

@@ -28,6 +28,26 @@ export class CreateUserDto {
   @IsOptional()
   phone?: string;
 
+  @ApiPropertyOptional({ example: '1234567890123' })
+  @IsString()
+  @IsOptional()
+  nationalId?: string;
+
+  @ApiPropertyOptional({ example: 'Dakar Plateau' })
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @ApiPropertyOptional({ example: 'AGT-001' })
+  @IsString()
+  @IsOptional()
+  employeeId?: string;
+
+  @ApiPropertyOptional({ example: 'Agent instructeur' })
+  @IsString()
+  @IsOptional()
+  jobTitle?: string;
+
   @ApiPropertyOptional({ enum: Role, default: Role.CITIZEN })
   @IsEnum(Role)
   @IsOptional()
@@ -37,4 +57,8 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   departmentId?: string;
+
+  @ApiPropertyOptional({ example: '2026-06-17T00:00:00.000Z' })
+  @IsOptional()
+  assignedAt?: Date;
 }

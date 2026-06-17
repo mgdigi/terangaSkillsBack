@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../core/database/prisma.service';
 
 @Injectable()
@@ -12,6 +12,10 @@ export class PaymentService {
 
     if (!request) {
       throw new NotFoundException('Administrative request not found');
+    }
+
+    if (request.citizenId !== userId) {
+      throw new ForbiddenException('You are not allowed to pay for this request');
     }
 
     if (request.status !== 'AWAITING_PAYMENT') {

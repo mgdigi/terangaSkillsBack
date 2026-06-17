@@ -1,9 +1,10 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, Req, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Public } from '../../core/common/decorators/public.decorator';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -31,5 +32,19 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current logged in user' })
   getProfile(@Req() req) {
     return req.user;
+  }
+
+  @ApiBearerAuth()
+  @Post('logout')
+  @ApiOperation({ summary: 'Logout current user' })
+  logout(@Req() req) {
+    return this.authService.logout(req.user.id);
+  }
+
+  @ApiBearerAuth()
+  @Patch('change-password')
+  @ApiOperation({ summary: 'Change current user password' })
+  changePassword(@Req() req, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(req.user.id, dto);
   }
 }

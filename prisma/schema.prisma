@@ -38,10 +38,20 @@ enum MissingDocumentStatus {
   ARCHIVED
 }
 
+enum ProjectStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  SUSPENDED
+}
+
 model Department {
   id           String        @id @default(uuid())
   name         String        @unique // ETAT_CIVIL, URBANISME, AFFAIRES_SOCIALES, VOIRIE
   description  String?
+  isActive     Boolean       @default(true)
+  managerId    String?
+  manager      User?         @relation("DepartmentManager", fields: [managerId], references: [id])
   agents       User[]
   requestTypes RequestType[]
   complaints   Complaint[]
@@ -63,12 +73,17 @@ model User {
   firstName    String
   lastName     String
   phone        String?
+  nationalId   String? @unique
+  address      String?
+  employeeId   String? @unique
+  jobTitle     String?
   role         Role    @default(CITIZEN)
   isActive     Boolean @default(true)
   refreshToken String?
 
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
+  assignedAt   DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -80,6 +95,7 @@ model User {
   actions                 ActionLog[]
   documentsReceived       AdministrativeDocument[] @relation("CitizenDocs")
   documentsIssued         AdministrativeDocument[] @relation("AgentDocs")
+  managedDepartments      Department[]             @relation("DepartmentManager")
 }
 
 model AdministrativeRequest {
@@ -185,4 +201,24 @@ model ActionLog {
   missingDocument   MissingDocument? @relation(fields: [missingDocumentId], references: [id])
 
   createdAt DateTime @default(now())
+}
+
+model InvestmentProject {
+  id          String        @id @default(uuid())
+  reference   String        @unique
+  name        String
+  description String?
+
+  company     String
+  budget      Float
+  spentAmount Float         @default(0)
+
+  progress    Int           @default(0)
+  status      ProjectStatus @default(PLANNED)
+
+  startDate   DateTime
+  endDate     DateTime?
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
