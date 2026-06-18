@@ -9,10 +9,14 @@ import { RequestStatus } from '@prisma/client';
 export class AdministrativeRequestsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly cloudinary: CloudinaryService
+    private readonly cloudinary: CloudinaryService,
   ) {}
 
-  async create(createDto: CreateAdministrativeRequestDto, files: Array<Express.Multer.File>, citizenId: string) {
+  async create(
+    createDto: CreateAdministrativeRequestDto,
+    files: Array<Express.Multer.File>,
+    citizenId: string,
+  ) {
     const attachments = [];
     if (files && files.length > 0) {
       for (const file of files) {
@@ -25,9 +29,10 @@ export class AdministrativeRequestsService {
     if (typeof parsedData === 'string') {
       try {
         parsedData = JSON.parse(parsedData);
-      } catch (e) {
+      } catch {
         // keep as string if not JSON
       }
+
     }
 
     return this.prisma.$transaction(async (prisma) => {
@@ -58,8 +63,19 @@ export class AdministrativeRequestsService {
   async findAll() {
     return this.prisma.administrativeRequest.findMany({
       include: {
-        citizen: { select: { firstName: true, lastName: true, phone: true } },
-        assignedAgent: { select: { firstName: true, lastName: true } },
+        citizen: {
+          select: { id: true, firstName: true, lastName: true, phone: true },
+        },
+        assignedAgent: {
+          select: { id: true, firstName: true, lastName: true },
+        },
+        requestType: {
+          select: {
+            id: true,
+            name: true,
+            department: { select: { id: true, name: true } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -69,7 +85,16 @@ export class AdministrativeRequestsService {
     return this.prisma.administrativeRequest.findMany({
       where: { citizenId },
       include: {
-        assignedAgent: { select: { firstName: true, lastName: true } },
+        assignedAgent: {
+          select: { id: true, firstName: true, lastName: true },
+        },
+        requestType: {
+          select: {
+            id: true,
+            name: true,
+            department: { select: { id: true, name: true } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -79,18 +104,34 @@ export class AdministrativeRequestsService {
     const request = await this.prisma.administrativeRequest.findUnique({
       where: { id },
       include: {
-        citizen: { select: { firstName: true, lastName: true, phone: true } },
-        assignedAgent: { select: { firstName: true, lastName: true } },
+        citizen: {
+          select: { id: true, firstName: true, lastName: true, phone: true },
+        },
+        assignedAgent: {
+          select: { id: true, firstName: true, lastName: true },
+        },
+        requestType: {
+          select: {
+            id: true,
+            name: true,
+            department: { select: { id: true, name: true } },
+          },
+        },
         document: true,
         history: {
-          include: { actor: { select: { firstName: true, lastName: true, role: true } } },
+          include: {
+            actor: {
+              select: { firstName: true, lastName: true, role: true },
+            },
+          },
           orderBy: { createdAt: 'desc' },
         },
       },
     });
 
-    if (!request) throw new NotFoundException(`Request with ID ${id} not found`);
-    
+    if (!request)
+      throw new NotFoundException(`Request with ID ${id} not found`);
+
     if (userId && !isAdmin && request.citizenId !== userId) {
       throw new NotFoundException(`Request not found or unauthorized`);
     }
@@ -98,7 +139,12 @@ export class AdministrativeRequestsService {
     return request;
   }
 
-  async update(id: string, updateDto: UpdateAdministrativeRequestDto, userId: string, isAdmin: boolean) {
+  async update(
+    id: string,
+    updateDto: UpdateAdministrativeRequestDto,
+    userId: string,
+    isAdmin: boolean,
+  ) {
     const request = await this.findOne(id);
 
     if (!isAdmin && request.citizenId !== userId) {
@@ -113,7 +159,7 @@ export class AdministrativeRequestsService {
 
   async updateStatus(id: string, status: RequestStatus, actorId: string) {
     await this.findOne(id);
-    
+
     return this.prisma.$transaction(async (prisma) => {
       const updated = await prisma.administrativeRequest.update({
         where: { id },
@@ -135,7 +181,7 @@ export class AdministrativeRequestsService {
 
   async assignAgent(id: string, agentId: string, actorId: string) {
     await this.findOne(id);
-    
+
     return this.prisma.$transaction(async (prisma) => {
       const updated = await prisma.administrativeRequest.update({
         where: { id },
