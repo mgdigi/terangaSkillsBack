@@ -9,12 +9,13 @@ import {
   UseInterceptors,
   UploadedFile,
   Req,
+  Query,
 } from '@nestjs/common';
 import { MissingDocumentsService } from './missing-documents.service';
 import { CreateMissingDocumentDto } from './dto/create-missing-document.dto';
 import { UpdateMissingDocumentDto } from './dto/update-missing-document.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { MissingDocumentStatus, Role } from '@prisma/client';
 import { Roles } from '../../core/common/decorators/roles.decorator';
 import { Public } from '../../core/common/decorators/public.decorator';
@@ -39,9 +40,14 @@ export class MissingDocumentsController {
 
   @Public()
   @Get()
-  @ApiOperation({ summary: 'Get all reported missing documents' })
-  findAll() {
-    return this.missingDocumentsService.findAll();
+  @ApiOperation({ summary: 'Get all reported missing documents with optional filters' })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'status', required: false, enum: MissingDocumentStatus })
+  findAll(
+    @Query('search') search?: string,
+    @Query('status') status?: MissingDocumentStatus,
+  ) {
+    return this.missingDocumentsService.findAll(search, status);
   }
 
   @Public()

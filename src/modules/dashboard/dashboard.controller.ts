@@ -16,4 +16,10 @@ export class DashboardController {
   getStatistics() {
     return this.dashboardService.getStatistics();
   }
+
+  @Get('analytics')
+  @ApiOperation({ summary: 'Get detailed analytics with monthly data and charts (Admin/Agent)' })
+  getAnalytics() {
+    return this.dashboardService.getAnalytics();
+  }
 }

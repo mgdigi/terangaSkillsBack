@@ -32,8 +32,20 @@ export class MissingDocumentsService {
     });
   }
 
-  async findAll() {
+  async findAll(search?: string, status?: MissingDocumentStatus) {
     return this.prisma.missingDocument.findMany({
+      where: {
+        ...(status && { status }),
+        ...(search && {
+          OR: [
+            { title: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+            { lastSeenLocation: { contains: search, mode: 'insensitive' } },
+            { reportedBy: { firstName: { contains: search, mode: 'insensitive' } } },
+            { reportedBy: { lastName: { contains: search, mode: 'insensitive' } } },
+          ],
+        }),
+      },
       include: {
         reportedBy: { select: { firstName: true, lastName: true, phone: true } },
       },

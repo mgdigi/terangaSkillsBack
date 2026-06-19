@@ -9,11 +9,19 @@ import {
   Req,
   UseInterceptors,
   UploadedFiles,
+  Query,
 } from '@nestjs/common';
 import { AdministrativeRequestsService } from './administrative-requests.service';
 import { CreateAdministrativeRequestDto } from './dto/create-administrative-request.dto';
 import { UpdateAdministrativeRequestDto } from './dto/update-administrative-request.dto';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags, ApiBody } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { RequestStatus, Role } from '@prisma/client';
 import { Roles } from '../../core/common/decorators/roles.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -38,15 +46,50 @@ export class AdministrativeRequestsController {
 
   @Roles(Role.ADMIN, Role.AGENT)
   @Get()
-  @ApiOperation({ summary: 'Get all requests (Admin/Agent)' })
-  findAll() {
-    return this.service.findAll();
+  @ApiOperation({ summary: 'Get all requests with optional filters (Admin/Agent)' })
+  @ApiQuery({ name: 'departmentId', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'status', required: false, enum: RequestStatus })
+  findAll(
+    @Req() req: any,
+    @Query('departmentId') departmentId?: string,
+    @Query('search') search?: string,
+    @Query('status') status?: RequestStatus,
+  ) {
+    if (req.user.role === Role.AGENT) {
+      if (!req.user.departmentId) {
+        return []; // Agent sans service ne voit aucune demande
+      }
+      departmentId = req.user.departmentId;
+    }
+    return this.service.findAll(departmentId, search, status);
+  }
+
+  @Roles(Role.ADMIN, Role.AGENT)
+  @Get('stats')
+  @ApiOperation({ summary: 'Get request statistics, optionally filtered by department (Admin/Agent)' })
+  @ApiQuery({ name: 'departmentId', required: false })
+  getStats(@Req() req: any, @Query('departmentId') departmentId?: string) {
+    if (req.user.role === Role.AGENT) {
+      if (!req.user.departmentId) {
+        return { total: 0, pending: 0, inProgress: 0, completed: 0, rejected: 0 };
+      }
+      departmentId = req.user.departmentId;
+    }
+    return this.service.getStats(departmentId);
   }
 
   @Get('my-requests')
   @ApiOperation({ summary: 'Get current citizen requests' })
   findAllMyRequests(@Req() req: any) {
     return this.service.findAllByCitizen(req.user.id);
+  }
+
+  @Roles(Role.AGENT)
+  @Get('assigned-to-me')
+  @ApiOperation({ summary: 'Get requests assigned to the current agent' })
+  findAssignedToMe(@Req() req: any) {
+    return this.service.findAllAssignedToAgent(req.user.id);
   }
 
   @Get(':id')
@@ -70,7 +113,26 @@ export class AdministrativeRequestsController {
   @Roles(Role.ADMIN, Role.AGENT)
   @Patch(':id/status')
   @ApiOperation({ summary: 'Change request status (Admin/Agent)' })
-  @ApiBody({ schema: { type: 'object', properties: { status: { type: 'string', enum: ['SUBMITTED', 'ASSIGNED', 'IN_PROGRESS', 'PROCESSED', 'VALIDATED', 'AWAITING_PAYMENT', 'COMPLETED', 'REJECTED'] } } } })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          enum: [
+            'SUBMITTED',
+            'ASSIGNED',
+            'IN_PROGRESS',
+            'PROCESSED',
+            'VALIDATED',
+            'AWAITING_PAYMENT',
+            'COMPLETED',
+            'REJECTED',
+          ],
+        },
+      },
+    },
+  })
   updateStatus(
     @Param('id') id: string,
     @Body('status') status: RequestStatus,
@@ -82,7 +144,12 @@ export class AdministrativeRequestsController {
   @Roles(Role.ADMIN)
   @Patch(':id/assign')
   @ApiOperation({ summary: 'Assign an agent to a request (Admin)' })
-  @ApiBody({ schema: { type: 'object', properties: { agentId: { type: 'string', example: 'uuid-of-agent' } } } })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { agentId: { type: 'string', example: 'uuid-of-agent' } },
+    },
+  })
   assignAgent(
     @Param('id') id: string,
     @Body('agentId') agentId: string,
