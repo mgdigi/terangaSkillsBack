@@ -31,8 +31,19 @@ export class ComplaintsService {
     });
   }
 
-  async findAll() {
+  async findAll(search?: string, status?: ComplaintStatus) {
     return this.prisma.complaint.findMany({
+      where: {
+        ...(status && { status }),
+        ...(search && {
+          OR: [
+            { title: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+            { citizen: { firstName: { contains: search, mode: 'insensitive' } } },
+            { citizen: { lastName: { contains: search, mode: 'insensitive' } } },
+          ],
+        }),
+      },
       include: {
         citizen: { select: { firstName: true, lastName: true, phone: true } },
       },

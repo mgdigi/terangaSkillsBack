@@ -9,10 +9,14 @@ import { RequestStatus } from '@prisma/client';
 export class AdministrativeRequestsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly cloudinary: CloudinaryService
+    private readonly cloudinary: CloudinaryService,
   ) {}
 
-  async create(createDto: CreateAdministrativeRequestDto, files: Array<Express.Multer.File>, citizenId: string) {
+  async create(
+    createDto: CreateAdministrativeRequestDto,
+    files: Array<Express.Multer.File>,
+    citizenId: string,
+  ) {
     const attachments = [];
     if (files && files.length > 0) {
       for (const file of files) {
@@ -40,6 +44,10 @@ export class AdministrativeRequestsService {
           attachments,
           citizenId,
         },
+        include: {
+          citizen: { select: { firstName: true, lastName: true, phone: true } },
+          requestType: { include: { department: true } },
+        },
       });
 
       await prisma.actionLog.create({
@@ -55,11 +63,32 @@ export class AdministrativeRequestsService {
     });
   }
 
-  async findAll() {
+  async findAll(departmentId?: string, search?: string, status?: RequestStatus) {
     return this.prisma.administrativeRequest.findMany({
+      where: {
+        ...(status && { status }),
+        ...(departmentId && {
+          requestType: { departmentId },
+        }),
+        ...(search && {
+          OR: [
+            { title: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+            {
+              citizen: {
+                OR: [
+                  { firstName: { contains: search, mode: 'insensitive' } },
+                  { lastName: { contains: search, mode: 'insensitive' } },
+                ],
+              },
+            },
+          ],
+        }),
+      },
       include: {
-        citizen: { select: { firstName: true, lastName: true, phone: true } },
-        assignedAgent: { select: { firstName: true, lastName: true } },
+        citizen: { select: { id: true, firstName: true, lastName: true, phone: true } },
+        assignedAgent: { select: { id: true, firstName: true, lastName: true } },
+        requestType: { include: { department: { select: { id: true, name: true } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -70,27 +99,75 @@ export class AdministrativeRequestsService {
       where: { citizenId },
       include: {
         assignedAgent: { select: { firstName: true, lastName: true } },
+        requestType: { include: { department: { select: { name: true } } } },
+        document: true,
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async findAllAssignedToAgent(agentId: string) {
+    return this.prisma.administrativeRequest.findMany({
+      where: { assignedAgentId: agentId },
+      include: {
+        citizen: { select: { id: true, firstName: true, lastName: true, phone: true } },
+        requestType: { include: { department: { select: { id: true, name: true } } } },
+        document: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getStats(departmentId?: string) {
+    const [total, pending, inProgress, completed, rejected] = await Promise.all([
+      this.prisma.administrativeRequest.count({
+        where: departmentId ? { requestType: { departmentId } } : {},
+      }),
+      this.prisma.administrativeRequest.count({
+        where: { status: 'SUBMITTED', ...(departmentId ? { requestType: { departmentId } } : {}) },
+      }),
+      this.prisma.administrativeRequest.count({
+        where: {
+          status: { in: ['IN_PROGRESS', 'ASSIGNED', 'PROCESSED', 'VALIDATED'] },
+          ...(departmentId ? { requestType: { departmentId } } : {}),
+        },
+      }),
+      this.prisma.administrativeRequest.count({
+        where: {
+          status: 'COMPLETED',
+          ...(departmentId ? { requestType: { departmentId } } : {}),
+        },
+      }),
+      this.prisma.administrativeRequest.count({
+        where: {
+          status: 'REJECTED',
+          ...(departmentId ? { requestType: { departmentId } } : {}),
+        },
+      }),
+    ]);
+
+    return { total, pending, inProgress, completed, rejected };
   }
 
   async findOne(id: string, userId?: string, isAdmin?: boolean) {
     const request = await this.prisma.administrativeRequest.findUnique({
       where: { id },
       include: {
-        citizen: { select: { firstName: true, lastName: true, phone: true } },
-        assignedAgent: { select: { firstName: true, lastName: true } },
+        citizen: { select: { id: true, firstName: true, lastName: true, phone: true } },
+        assignedAgent: { select: { id: true, firstName: true, lastName: true } },
+        requestType: { include: { department: true } },
         document: true,
         history: {
-          include: { actor: { select: { firstName: true, lastName: true, role: true } } },
+          include: {
+            actor: { select: { firstName: true, lastName: true, role: true } },
+          },
           orderBy: { createdAt: 'desc' },
         },
       },
     });
 
     if (!request) throw new NotFoundException(`Request with ID ${id} not found`);
-    
+
     if (userId && !isAdmin && request.citizenId !== userId) {
       throw new NotFoundException(`Request not found or unauthorized`);
     }
@@ -98,7 +175,12 @@ export class AdministrativeRequestsService {
     return request;
   }
 
-  async update(id: string, updateDto: UpdateAdministrativeRequestDto, userId: string, isAdmin: boolean) {
+  async update(
+    id: string,
+    updateDto: UpdateAdministrativeRequestDto,
+    userId: string,
+    isAdmin: boolean,
+  ) {
     const request = await this.findOne(id);
 
     if (!isAdmin && request.citizenId !== userId) {
@@ -113,7 +195,7 @@ export class AdministrativeRequestsService {
 
   async updateStatus(id: string, status: RequestStatus, actorId: string) {
     await this.findOne(id);
-    
+
     return this.prisma.$transaction(async (prisma) => {
       const updated = await prisma.administrativeRequest.update({
         where: { id },
@@ -135,11 +217,14 @@ export class AdministrativeRequestsService {
 
   async assignAgent(id: string, agentId: string, actorId: string) {
     await this.findOne(id);
-    
+
     return this.prisma.$transaction(async (prisma) => {
       const updated = await prisma.administrativeRequest.update({
         where: { id },
-        data: { assignedAgentId: agentId },
+        data: { assignedAgentId: agentId, status: 'ASSIGNED' },
+        include: {
+          assignedAgent: { select: { firstName: true, lastName: true } },
+        },
       });
 
       await prisma.actionLog.create({

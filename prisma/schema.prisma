@@ -80,6 +80,7 @@ model User {
   actions                 ActionLog[]
   documentsReceived       AdministrativeDocument[] @relation("CitizenDocs")
   documentsIssued         AdministrativeDocument[] @relation("AgentDocs")
+  createdProjects         InvestmentProject[]      @relation("CreatedProjects")
 }
 
 model AdministrativeRequest {
@@ -165,6 +166,32 @@ model MissingDocument {
   updatedAt DateTime @updatedAt
 
   history ActionLog[]
+}
+
+enum ProjectStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  SUSPENDED
+  CANCELLED
+}
+
+model InvestmentProject {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  budget      Float
+  company     String?
+  progress    Int           @default(0) // percentage 0-100
+  status      ProjectStatus @default(PLANNED)
+  startDate   DateTime?
+  endDate     DateTime?
+
+  createdById String
+  createdBy   User   @relation("CreatedProjects", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ActionLog {

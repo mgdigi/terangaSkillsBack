@@ -9,12 +9,13 @@ import {
   UseInterceptors,
   UploadedFile,
   Req,
+  Query,
 } from '@nestjs/common';
 import { ComplaintsService } from './complaints.service';
 import { CreateComplaintDto } from './dto/create-complaint.dto';
 import { UpdateComplaintDto } from './dto/update-complaint.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags, ApiBody } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { ComplaintStatus, Role } from '@prisma/client';
 import { Roles } from '../../core/common/decorators/roles.decorator';
 
@@ -38,9 +39,14 @@ export class ComplaintsController {
 
   @Roles(Role.ADMIN, Role.AGENT)
   @Get()
-  @ApiOperation({ summary: 'Get all complaints (Admin/Agent/Chief)' })
-  findAll() {
-    return this.complaintsService.findAll();
+  @ApiOperation({ summary: 'Get all complaints with optional filters (Admin/Agent)' })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'status', required: false, enum: ComplaintStatus })
+  findAll(
+    @Query('search') search?: string,
+    @Query('status') status?: ComplaintStatus,
+  ) {
+    return this.complaintsService.findAll(search, status);
   }
 
   @Get('my-complaints')

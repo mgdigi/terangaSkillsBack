@@ -13,6 +13,7 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
 import { PaymentModule } from './modules/payment/payment.module';
+import { InvestmentProjectsModule } from './modules/investment-projects/investment-projects.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PaymentModule } from './modules/payment/payment.module';
     DashboardModule,
     DepartmentsModule,
     PaymentModule,
+    InvestmentProjectsModule,
   ],
   controllers: [],
   providers: [
